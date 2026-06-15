@@ -6,7 +6,7 @@ import {
   TrendingUp, KeyRound, Users, Building2, Wallet, Wrench, Lightbulb, Calendar,
   ShieldAlert, CheckCircle2, BookOpen, BadgeCheck, LineChart
 } from "lucide-react";
-import { STATE_RENT, CITY_RENT, NATIONAL, modelByBedroom } from "./rentData";
+import { STATE_RENT, CITY_RENT, NATIONAL, modelByBedroom, zipToState } from "./rentData";
 
 /* ============================================================
    LandlordRules.com
@@ -209,18 +209,37 @@ function IllustrationTenant({ className = "" }) {
 }
 
 /* ---------- rent location resolver ---------- */
-function resolveLocation(input) {
-  const q = (input || "").trim().toLowerCase();
+function parseInput(raw) {
+  const q = (raw || "").trim();
   if (!q) return null;
-  const city = CITY_RENT.find((c) => c.city.toLowerCase() === q || `${c.city}, ${c.state}`.toLowerCase() === q);
-  if (city) return { kind: "city", label: `${city.city}, ${city.state}`, state: city.state, median: city.median, avg: city.avg };
-  const st = STATES.find((s) => s.name.toLowerCase() === q || s.abbr.toLowerCase() === q);
-  if (st && STATE_RENT[st.abbr]) return { kind: "state", label: st.name, state: st.abbr, ...STATE_RENT[st.abbr] };
-  const pc = CITY_RENT.find((c) => c.city.toLowerCase().startsWith(q));
-  if (pc) return { kind: "city", label: `${pc.city}, ${pc.state}`, state: pc.state, median: pc.median, avg: pc.avg };
-  const ps = STATES.find((s) => s.name.toLowerCase().startsWith(q));
-  if (ps && STATE_RENT[ps.abbr]) return { kind: "state", label: ps.name, state: ps.abbr, ...STATE_RENT[ps.abbr] };
-  return { kind: "none", input };
+  const lq = q.toLowerCase();
+  // 5-digit zip
+  if (/^\d{5}$/.test(q)) return { kind: "zip", zip: q };
+  // exact city (matches "City" or "City, ST" from our list) -> use its real numbers
+  const city = CITY_RENT.find((c) => c.city.toLowerCase() === lq || `${c.city}, ${c.state}`.toLowerCase() === lq);
+  if (city) return { kind: "city", city: city.city, state: city.state, label: `${city.city}, ${city.state}`, fallback: { median: city.median, avg: city.avg } };
+  // exact state (name or abbreviation)
+  const st = STATES.find((s) => s.name.toLowerCase() === lq || s.abbr.toLowerCase() === lq);
+  if (st) return { kind: "state", state: st.abbr, label: st.name };
+  // "City, ST" where the city isn't in our list but the state is valid -> live lookup, state fallback
+  const comma = q.match(/^(.+),\s*([A-Za-z]{2,})$/);
+  if (comma) {
+    const cityPart = comma[1].trim();
+    const sp = comma[2].trim().toLowerCase();
+    const st2 = STATES.find((s) => s.abbr.toLowerCase() === sp || s.name.toLowerCase() === sp);
+    if (st2) return { kind: "city", city: cityPart, state: st2.abbr, label: `${cityPart}, ${st2.abbr}` };
+  }
+  // partial city (bundled)
+  const pc = CITY_RENT.find((c) => c.city.toLowerCase().startsWith(lq));
+  if (pc) return { kind: "city", city: pc.city, state: pc.state, label: `${pc.city}, ${pc.state}`, fallback: { median: pc.median, avg: pc.avg } };
+  // partial state
+  const ps = STATES.find((s) => s.name.toLowerCase().startsWith(lq));
+  if (ps) return { kind: "state", state: ps.abbr, label: ps.name };
+  return { kind: "none", input: q };
+}
+
+function resolveLocation(input) {
+  return parseInput(input);
 }
 
 /* ============================================================
@@ -1319,6 +1338,55 @@ function RentChart({ byBed, accent }) {
   );
 }
 
+function HistoryChart({ history, forecast, accent }) {
+  const hist = (history || []).filter((h) => h.median != null);
+  if (hist.length < 2) return null;
+  const fc = forecast || [];
+  const all = [...hist, ...fc.map((f) => ({ ...f, projected: true }))];
+  const years = all.map((a) => a.year);
+  const vals = all.map((a) => a.median);
+  const minYear = Math.min(...years), maxYear = Math.max(...years);
+  let minV = Math.min(...vals), maxV = Math.max(...vals);
+  const padV = Math.max(50, (maxV - minV) * 0.18);
+  minV = Math.max(0, Math.floor((minV - padV) / 50) * 50);
+  maxV = Math.ceil((maxV + padV) / 50) * 50;
+  const W = 620, H = 250, padL = 54, padR = 18, padT = 16, padB = 30;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const xs = (y) => padL + (maxYear === minYear ? 0 : (y - minYear) / (maxYear - minYear)) * plotW;
+  const ys = (v) => padT + (1 - (v - minV) / (maxV - minV)) * plotH;
+  const histPath = hist.map((h, i) => `${i ? "L" : "M"}${xs(h.year)},${ys(h.median)}`).join(" ");
+  const lastH = hist[hist.length - 1];
+  const fcPath = fc.length ? `M${xs(lastH.year)},${ys(lastH.median)} ` + fc.map((f) => `L${xs(f.year)},${ys(f.median)}`).join(" ") : "";
+  const ticks = [minV, Math.round(((minV + maxV) / 2) / 50) * 50, maxV];
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Historical and projected rent trend">
+      {ticks.map((t, i) => (
+        <g key={i}>
+          <line x1={padL} y1={ys(t)} x2={W - padR} y2={ys(t)} stroke="#ECE6DA" strokeWidth="1" />
+          <text x={padL - 8} y={ys(t) + 4} textAnchor="end" fontSize="11" fill="#94a3b8">${t.toLocaleString()}</text>
+        </g>
+      ))}
+      {all.map((a, i) => (
+        <text key={i} x={xs(a.year)} y={H - 9} textAnchor="middle" fontSize="11" fill={a.projected ? "#b0a99a" : "#64748b"}>{a.year}</text>
+      ))}
+      {fcPath && <path d={fcPath} fill="none" stroke={accent} strokeWidth="2.5" strokeDasharray="5 5" opacity="0.6" />}
+      <path d={histPath} fill="none" stroke={accent} strokeWidth="3" strokeLinejoin="round" />
+      {hist.map((h, i) => <circle key={i} cx={xs(h.year)} cy={ys(h.median)} r="4" fill={accent} />)}
+      {fc.map((f, i) => <circle key={i} cx={xs(f.year)} cy={ys(f.median)} r="4" fill="#FAF8F4" stroke={accent} strokeWidth="2" />)}
+    </svg>
+  );
+}
+
+/* Model a plausible rent history + 3-year forecast from a single median,
+   used for local/reference results. Clearly labeled as an estimate in the UI. */
+function modelTrend(median) {
+  const g = 0.032; // ~3.2%/yr long-run rent growth assumption
+  const r = (n) => Math.round(n / 10) * 10;
+  const history = [2013, 2015, 2017, 2019, 2021, 2023].map((y) => ({ year: y, median: r(median * Math.pow(1 + g, y - 2023)) }));
+  const forecast = [2024, 2025, 2026].map((y) => ({ year: y, median: r(median * Math.pow(1 + g, y - 2023)) }));
+  return { history, forecast };
+}
+
 function RentPrices({ mode }) {
   const accent = mode === "tenant" ? "#0E7A66" : "#1C4B8A";
   const eyebrowColor = mode === "tenant" ? "#0E7A66" : "#C9A227";
@@ -1326,124 +1394,253 @@ function RentPrices({ mode }) {
   const [submitted, setSubmitted] = useState("");
   const [live, setLive] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState("");
 
-  const resolved = useMemo(() => resolveLocation(submitted), [submitted]);
-  const abbr = resolved && resolved.state ? resolved.state : null;
+  function buildFnUrl(p) {
+    if (!p || p.kind === "none") return null;
+    if (p.kind === "zip") return `/.netlify/functions/rent?zip=${p.zip}`;
+    if (p.kind === "city") return `/.netlify/functions/rent?city=${encodeURIComponent(p.city)}&state=${p.state}`;
+    if (p.kind === "state") return `/.netlify/functions/rent?state=${p.state}`;
+    if (p.kind === "latlng") return `/.netlify/functions/rent?lat=${p.lat}&lng=${p.lng}`;
+    return null;
+  }
+
+  const parsedFinal = useMemo(() => {
+    if (!submitted) return null;
+    if (submitted.startsWith("__latlng__")) {
+      const [lat, lng] = submitted.replace("__latlng__", "").split(",").map(Number);
+      return { kind: "latlng", lat, lng, label: input };
+    }
+    return parseInput(submitted);
+  }, [submitted, input]);
 
   useEffect(() => {
-    if (!abbr) { setLive(null); return; }
+    const url = buildFnUrl(parsedFinal);
+    if (!url) { setLive(null); return; }
     let cancelled = false;
     setLoading(true);
-    fetch(`/.netlify/functions/rent?state=${abbr}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("no function"))))
+    fetch(url)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => { if (!cancelled) setLive(d && d.median ? d : null); })
       .catch(() => { if (!cancelled) setLive(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [abbr]);
+  }, [submitted]);
 
-  const submit = (val) => { const v = val ?? input; setInput(v); setSubmitted(v); };
+  const submit = (val) => {
+    const v = (val !== undefined ? val : input).trim();
+    setInput(v); setSubmitted(v); setGeoError("");
+  };
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) { setGeoError("Geolocation isn't supported by your browser."); return; }
+    setGeoLoading(true); setGeoError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        setInput(`Your location (${lat.toFixed(3)}, ${lng.toFixed(3)})`);
+        setSubmitted(`__latlng__${lat},${lng}`);
+        setGeoLoading(false);
+      },
+      (err) => {
+        setGeoLoading(false);
+        setGeoError(err.code === 1 ? "Location access denied. Please allow location access and try again." : "Couldn't get your location. Try searching manually.");
+      },
+      { timeout: 10000 }
+    );
+  };
 
   let result = null;
-  if (resolved && resolved.kind !== "none" && resolved.state) {
-    const useLive = resolved.kind === "state" && live && live.median;
-    const median = useLive ? live.median : resolved.median;
-    const avg = Math.round((median * 1.13) / 10) * 10;
-    const byBed = live && live.byBed && live.byBed.br2 ? live.byBed : modelByBedroom(median);
-    const source = useLive ? `Live data · U.S. Census ACS ${live.year}` : "Reference estimate";
-    const stateName = getState(resolved.state).name;
-    result = { median, avg, byBed, source, useLive, label: resolved.label, kind: resolved.kind, stateName };
+  if (parsedFinal && parsedFinal.kind !== "none") {
+    if (live && live.median) {
+      const avg = Math.round((live.median * 1.13) / 10) * 10;
+      result = { median: live.median, avg, byBed: live.byBed && live.byBed.br2 ? live.byBed : modelByBedroom(live.median), source: `Live data · U.S. Census ACS ${live.year}`, useLive: true, label: live.name || parsedFinal.label, history: live.history, forecast: live.forecast, population: live.population, mobility: live.mobility };
+    } else if (!loading) {
+      // bundled / reference result
+      let base = null, label = parsedFinal.label;
+      if (parsedFinal.fallback) {
+        base = parsedFinal.fallback;
+      } else if (parsedFinal.state && STATE_RENT[parsedFinal.state]) {
+        base = STATE_RENT[parsedFinal.state];
+        label = parsedFinal.label || getState(parsedFinal.state).name;
+      } else if (parsedFinal.kind === "zip") {
+        const stAbbr = zipToState(parsedFinal.zip);
+        if (stAbbr && STATE_RENT[stAbbr]) { base = STATE_RENT[stAbbr]; label = `ZIP ${parsedFinal.zip} (${getState(stAbbr).name})`; }
+      }
+      if (base) {
+        const t = modelTrend(base.median);
+        result = { median: base.median, avg: base.avg, byBed: modelByBedroom(base.median), source: "Estimated (reference)", useLive: false, modeled: true, label, history: t.history, forecast: t.forecast };
+      }
+    }
   }
 
-  const examples = ["New York", "California", "Austin", "Plattsburgh"];
+  const showNoMatch = parsedFinal && parsedFinal.kind === "none" && !loading;
+  const noData = parsedFinal && parsedFinal.kind !== "none" && parsedFinal.kind !== "zip" && !loading && !result;
+  const examples = ["New York", "Los Angeles", "Chicago", "Miami", "90210"];
 
   return (
     <div className={`${WRAP} py-12`}>
       <p className="text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: eyebrowColor }}>Rent Data</p>
-      <h1 style={serif} className="mt-3 text-3xl font-bold text-[#0B1F3A] sm:text-4xl">What’s the rent where you are?</h1>
+      <h1 style={serif} className="mt-3 text-3xl font-bold text-[#0B1F3A] sm:text-4xl">What's the rent where you are?</h1>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
-        Search a state or major city to see typical median and average rent and a breakdown by bedroom count.
-        {mode === "tenant" ? " Use it to sanity-check whether your rent is in line with your area." : " Use it to price your units to the local market."}
+        Search any U.S. state, city, or zip code — or use your current location — to see median and average rent by bedroom.
+        {mode === "tenant" ? " Use it to check whether your rent is fair." : " Use it to price your units to the local market."}
       </p>
 
       <div className="mt-7 max-w-xl">
         <div className="relative">
           <MapPin size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-            list="rent-locations"
-            placeholder="Search a city or state…"
+          <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()}
+            list="rent-locations" placeholder="City, state or zip — e.g. 11949 or Manorville, NY"
             aria-label="Search a location"
-            className="w-full rounded-xl border border-slate-300 bg-white py-3.5 pl-11 pr-24 text-sm text-[#0B1F3A] outline-none focus:border-[#0B1F3A] focus:ring-2 focus:ring-[#0B1F3A]/15"
-          />
-          <button onClick={() => submit()} className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: accent }}>
-            Search
-          </button>
+            className="w-full rounded-xl border border-slate-300 bg-white py-3.5 pl-11 pr-24 text-sm text-[#0B1F3A] outline-none focus:border-[#0B1F3A] focus:ring-2 focus:ring-[#0B1F3A]/15" />
+          <button onClick={() => submit()} className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: accent }}>Search</button>
           <datalist id="rent-locations">
             {CITY_RENT.map((c) => <option key={`${c.city}-${c.state}`} value={`${c.city}, ${c.state}`} />)}
             {STATES.map((s) => <option key={s.abbr} value={s.name} />)}
           </datalist>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-500">Try:</span>
+          <button onClick={useMyLocation} disabled={geoLoading}
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-[#0B1F3A] hover:text-[#0B1F3A] disabled:opacity-50">
+            <MapPin size={13} className={geoLoading ? "animate-pulse" : ""} />
+            {geoLoading ? "Detecting…" : "Use my location"}
+          </button>
+          <span className="text-xs text-slate-400">or try:</span>
           {examples.map((ex) => (
             <button key={ex} onClick={() => submit(ex)} className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:border-[#0B1F3A] hover:text-[#0B1F3A]">{ex}</button>
           ))}
         </div>
+        {geoError && <p className="mt-2 text-xs text-red-600">{geoError}</p>}
       </div>
 
-      {result && (
+      {loading && (
+        <div className="mt-8 flex items-center gap-3 text-sm text-slate-500">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#0B1F3A]" />
+          Looking up rent data…
+        </div>
+      )}
+
+      {!loading && result && (
         <div className="mt-8">
           <div className="flex flex-wrap items-center gap-3">
             <h2 style={serif} className="text-2xl font-bold text-[#0B1F3A]">{result.label}</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold" style={{ background: result.useLive ? "#E7F6F1" : "#F4F1EA", color: result.useLive ? "#0E7A66" : "#6B7280" }}>
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+              style={{ background: result.useLive ? "#E7F6F1" : "#F4F1EA", color: result.useLive ? "#0E7A66" : "#6B7280" }}>
               {result.useLive ? <BadgeCheck size={13} /> : <LineChart size={13} />}
-              {loading ? "Loading…" : result.source}
+              {result.source}
             </span>
           </div>
-
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <div className={`${card} p-6`}>
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Median rent</span>
               <p className="mt-1 text-4xl font-bold text-[#0B1F3A]">${result.median.toLocaleString()}<span className="text-base font-medium text-slate-400">/mo</span></p>
-              <p className="mt-1 text-xs text-slate-500">The midpoint — half of renters pay less, half pay more.</p>
+              <p className="mt-1 text-xs text-slate-500">Half of renters pay less, half pay more.</p>
             </div>
             <div className={`${card} p-6`}>
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Average rent <span className="font-normal normal-case text-slate-400">(estimated)</span></span>
               <p className="mt-1 text-4xl font-bold text-[#0B1F3A]">${result.avg.toLocaleString()}<span className="text-base font-medium text-slate-400">/mo</span></p>
-              <p className="mt-1 text-xs text-slate-500">Averages run higher than the median because of pricier units.</p>
+              <p className="mt-1 text-xs text-slate-500">Averages run higher because of pricier units.</p>
             </div>
           </div>
-
           <div className={`${card} mt-4 p-6`}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-[#0B1F3A]">Typical rent by bedrooms</span>
               <span className="text-xs text-slate-400">{result.useLive ? "Census medians" : "modeled estimate"}</span>
             </div>
-            <div className="mt-4">
-              <RentChart byBed={result.byBed} accent={accent} />
-            </div>
+            <div className="mt-4"><RentChart byBed={result.byBed} accent={accent} /></div>
           </div>
 
-          {result.kind === "city" && live && live.median && (
-            <p className="mt-4 text-sm text-slate-600">
-              Statewide, {result.stateName}’s median rent is <span className="font-semibold text-[#0B1F3A]">${live.median.toLocaleString()}/mo</span> <span className="text-slate-400">(live Census).</span>
-            </p>
+          {result.history && result.history.length >= 2 && (
+            <div className={`${card} mt-4 p-6`}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-bold text-[#0B1F3A]">Rent trend &amp; projection</span>
+                <div className="flex items-center gap-4 text-xs text-slate-500">
+                  <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 rounded" style={{ background: accent }} /> Actual</span>
+                  <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 rounded border-t-2 border-dashed" style={{ borderColor: accent }} /> Projected</span>
+                </div>
+              </div>
+              <div className="mt-4"><HistoryChart history={result.history} forecast={result.forecast} accent={accent} /></div>
+              <p className="mt-3 text-xs text-slate-400">
+                {result.modeled
+                  ? "Estimated trend modeled from the reference median (not Census data). The deployed site shows real year-by-year Census figures."
+                  : "Median gross rent by year (U.S. Census ACS). Projection is a simple trend estimate, not a guarantee."}
+              </p>
+            </div>
+          )}
+
+          {result.modeled && (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
+              <p className="text-xs leading-relaxed text-slate-500">
+                <span className="font-semibold text-slate-600">Population change and resident turnover</span> appear here automatically once the site is published on Netlify, where the live U.S. Census connection runs. On <code className="rounded bg-slate-200 px-1">localhost</code> you're seeing reference estimates.
+              </p>
+            </div>
+          )}
+
+          {(result.population || result.mobility) && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {result.population && (
+                <div className={`${card} p-6`}>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Population change</span>
+                  <p className="mt-1 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold" style={{ color: result.population.annualPct >= 0 ? "#15803D" : "#B91C1C" }}>
+                      {result.population.annualPct >= 0 ? "+" : ""}{result.population.annualPct}%
+                    </span>
+                    <span className="text-sm text-slate-400">per year</span>
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {result.population.annualPct >= 0 ? "Growing" : "Shrinking"} — {result.population.spanPct >= 0 ? "+" : ""}{result.population.spanPct}% over the last {result.population.spanYears} years. Population ≈ {result.population.value.toLocaleString()}.
+                  </p>
+                </div>
+              )}
+              {result.mobility && (
+                <div className={`${card} p-6`}>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Resident turnover</span>
+                  <p className="mt-1 flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-[#0B1F3A]">{result.mobility.movedInPct}%</span>
+                    <span className="text-sm text-slate-400">moved in last year</span>
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {result.mobility.fromOutsidePct}% came from outside the area. Higher turnover means more move-ins and move-outs; pair it with population change to see net direction.
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
 
-      {resolved && resolved.kind === "none" && (
-        <p className="mt-8 text-sm text-slate-500">No exact match for “{resolved.input}.” Try a U.S. state or a major city — or pick one of the examples above. Once deployed, the live Census lookup also covers any county or city.</p>
+      {showNoMatch && (
+        <div className={`${card} mt-8 p-5`}>
+          <p className="text-sm font-semibold text-[#0B1F3A]">No match for "{parsedFinal.input}"</p>
+          <p className="mt-1 text-sm text-slate-500">Try one of these formats:</p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+            <li>• Zip code — <button onClick={() => submit("11949")} className="font-semibold text-[#1D4ED8] hover:underline">11949</button></li>
+            <li>• City, State — <button onClick={() => submit("Manorville, NY")} className="font-semibold text-[#1D4ED8] hover:underline">Manorville, NY</button></li>
+            <li>• State name — <button onClick={() => submit("New York")} className="font-semibold text-[#1D4ED8] hover:underline">New York</button></li>
+            <li>• Or tap <span className="font-semibold">Use my location</span> above</li>
+          </ul>
+        </div>
+      )}
+
+      {noData && (
+        <div className={`${card} mt-8 p-5`}>
+          <p className="text-sm font-semibold text-[#0B1F3A]">No Census rent data for that location</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Some small zip codes and towns don't have published rent figures. Try a nearby{" "}
+            <button onClick={() => submit("Manorville, NY")} className="font-semibold text-[#1D4ED8] hover:underline">city</button>,
+            the <button onClick={() => submit("New York")} className="font-semibold text-[#1D4ED8] hover:underline">state</button>,
+            or a larger neighboring zip code.
+          </p>
+        </div>
       )}
 
       <div className={`${card} mt-8 p-5`}>
         <div className="flex items-start gap-3">
           <LineChart size={18} className="mt-0.5 shrink-0 text-[#1C4B8A]" />
           <p className="text-sm leading-relaxed text-slate-600">
-            <span className="font-semibold text-[#0B1F3A]">Where this comes from.</span> Figures shown here are rounded reference estimates so the tool always works. When the site is deployed on Netlify, it automatically pulls <span className="font-semibold">live median rent from the U.S. Census Bureau (American Community Survey)</span> for the selected state — official, free, and updated yearly. See the README to enable a free Census API key and extend it to counties and cities.
+            <span className="font-semibold text-[#0B1F3A]">Where this comes from.</span> Searches pull <span className="font-semibold">live data from the U.S. Census Bureau (ACS 5-year)</span> — rent, multi-year history, population, and resident mobility. Zip codes use the Census ZCTA tables and <span className="font-semibold">Use my location</span> detects your county via the Census geocoder. The rent projection is a simple trend estimate. Reference estimates appear as a fallback when live data isn't available for a place.
           </p>
         </div>
       </div>
@@ -1451,22 +1648,52 @@ function RentPrices({ mode }) {
     </div>
   );
 }
+/* ---- URL routing: path-based, with browser back/forward + shareable links ---- */
+const VIEW_SLUGS = { home: "", states: "state-laws", rent: "rent-data", notice: "notices", forms: "templates", tips: "tips", faq: "faq", qa: "qa" };
+const SLUG_TO_VIEW = Object.fromEntries(Object.entries(VIEW_SLUGS).map(([v, s]) => [s, v]));
+function pathFor(mode, view) {
+  if (!mode) return "/";
+  const slug = VIEW_SLUGS[view] || "";
+  return slug ? `/${mode}/${slug}` : `/${mode}`;
+}
+function parsePath(pathname) {
+  const parts = String(pathname || "/").split("/").filter(Boolean);
+  const mode = parts[0] === "landlord" || parts[0] === "tenant" ? parts[0] : null;
+  if (!mode) return { mode: null, view: "home" };
+  const view = SLUG_TO_VIEW[parts[1] || ""] || "home";
+  return { mode, view };
+}
+
 export default function App() {
-  const [mode, setMode] = useState(null); // null | 'landlord' | 'tenant'
-  const [view, setView] = useState("home"); // home | states | notice | forms | qa | faq
+  const initial = typeof window !== "undefined" ? parsePath(window.location.pathname) : { mode: null, view: "home" };
+  const [mode, setMode] = useState(initial.mode); // null | 'landlord' | 'tenant'
+  const [view, setView] = useState(initial.view); // home | states | rent | notice | forms | tips | qa | faq
   const [qaState, setQaState] = useState("NY");
   const [qaQuery, setQaQuery] = useState("");
   const [qaFocus, setQaFocus] = useState(null);
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "auto" }); }, [view, mode]);
 
-  const go = (v, focusId) => {
-    if (focusId) setQaFocus(focusId);
-    setView(v);
-  };
-  const switchMode = () => { setMode((m) => (m === "landlord" ? "tenant" : "landlord")); setView("home"); };
+  // Keep the URL in sync and respond to the browser back/forward buttons.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.history.replaceState({ mode, view }, "", pathFor(mode, view));
+    const onPop = () => { const s = parsePath(window.location.pathname); setMode(s.mode); setView(s.view); };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (!mode) return <EntryScreen choose={(m) => { setMode(m); setView("home"); }} />;
+  const navigate = (nextMode, nextView, focusId) => {
+    if (focusId) setQaFocus(focusId);
+    setMode(nextMode);
+    setView(nextView);
+    if (typeof window !== "undefined") window.history.pushState({ mode: nextMode, view: nextView }, "", pathFor(nextMode, nextView));
+  };
+  const go = (v, focusId) => navigate(mode, v, focusId);
+  const switchMode = () => navigate(mode === "landlord" ? "tenant" : "landlord", "home");
+
+  if (!mode) return <EntryScreen choose={(m) => navigate(m, "home")} />;
 
   let page = null;
   if (mode === "landlord") {
