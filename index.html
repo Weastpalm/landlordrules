@@ -7,7 +7,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     <!-- Primary SEO meta -->
-    <title>Landlord & Tenant Rights — State Laws, Free Forms & Rent Data</title>
+    <title>Landlord &amp; Tenant Rights: State Laws &amp; Free Forms</title>
     <meta
       name="description"
       content="Free landlord-tenant law guide for all 50 states, plus local rent data, a notice-letter generator, and free lease and rental form templates."
@@ -17,7 +17,7 @@
 
     <!-- Open Graph / social -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Landlord & Tenant Rights — State Laws & Free Forms" />
+    <meta property="og:title" content="Landlord & Tenant Rights: State Laws & Free Forms" />
     <meta
       property="og:description"
       content="State-by-state landlord-tenant law, local rent data, a free notice-letter generator, and free lease and rental templates."
@@ -25,7 +25,7 @@
     <meta property="og:url" content="https://landlordrules.com/" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- Google Fonts: Source Serif 4 (editorial headlines) + Inter (body) -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -34,9 +34,8 @@
     />
 
     <!--
-      GOOGLE ADSENSE: After your AdSense account is approved, paste your
-      account-level script tag here (it looks like the line below) and then
-      replace the "Ad" placeholder banners inside the app with real <ins> ad units.
+      GOOGLE ADSENSE: After approval, paste your account script tag here and
+      replace the "Ad" placeholder banners in the app with real <ins> ad units.
       <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
     -->
 
@@ -50,77 +49,110 @@
     </script>
   </head>
   <body>
+    <!-- Hidden form so Netlify detects and handles the React contact form -->
+    <form name="contact" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="text" name="subject" />
+      <textarea name="message"></textarea>
+    </form>
+
     <!--
-      The block below is real, crawlable HTML served on first load (good for SEO:
-      it provides an H1, headings, 300+ words, and internal + external links).
-      The React app replaces it instantly when JavaScript runs.
+      Crawlable HTML served on first load (provides the H1, headings, ~1,000 words
+      of content, and internal + external links for SEO). React replaces it instantly.
     -->
     <div id="root">
-      <main style="max-width:880px;margin:0 auto;padding:48px 24px;font-family:Inter,system-ui,Arial,sans-serif;color:#0B1F3A;line-height:1.6">
+      <main style="max-width:880px;margin:0 auto;padding:48px 24px;font-family:Inter,system-ui,Arial,sans-serif;color:#0B1F3A;line-height:1.65">
         <p style="font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#C9A227;margin:0 0 12px">LandlordRules</p>
         <h1 style="font-family:'Source Serif 4',Georgia,serif;font-size:38px;line-height:1.1;margin:0 0 16px">Know Your Rights. Run Your Property.</h1>
-        <p style="font-size:18px;color:#334155;margin:0 0 28px">
-          LandlordRules is a free, plain-English guide to landlord and tenant rights in all 50 U.S. states.
-          Look up the law for your state, generate notice letters, download free lease and rental form templates,
-          and check local rent prices — all in one place, with the actual statute behind every answer.
+
+        <p style="font-size:18px;color:#334155;margin:0 0 16px">
+          LandlordRules helps you <strong>know your rights</strong> and <strong>run your property</strong> with confidence. It's a
+          free, plain-English guide to landlord and tenant law in all 50 U.S. states — covering security deposits, entry notice,
+          eviction, late fees, lease terms, and more, with the actual statute behind every answer.
+        </p>
+        <p style="color:#334155;margin:0 0 28px">
+          Whether you own rental property or rent your home, the rules that protect you are scattered across confusing state
+          statutes and legal jargon. We pull them together in one place so you can find a clear answer in seconds, generate the
+          letters and documents you need, and check what rent really costs in your area — without paying a lawyer just to get
+          oriented. Choose the landlord path or the tenant path below to get started.
         </p>
 
-        <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">Landlord–Tenant Laws for All 50 States</h2>
+        <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">For Landlords: Run Your Property by the Book</h2>
         <p style="margin:0 0 16px;color:#334155">
-          Every state sets its own rules for security deposits, the notice a landlord must give before entering,
-          how much notice is required to end a tenancy, and limits on late fees. Our state law pages summarize
-          these rules clearly and link directly to the official statute so you can verify the details yourself.
-          Whether you are a landlord setting up a lease or a tenant trying to understand your rights, start with
-          your state.
+          Good landlords protect themselves with good paperwork and a clear understanding of the law. On the landlord side of
+          LandlordRules you can look up the rules for your state, generate professional notice letters in seconds, download free
+          lease and rental documents, and see local rent data so you price your units to the market. You'll know how much you can
+          legally charge for a security deposit, how much notice you must give before entering a unit, how to handle late rent,
+          and the right way to end a tenancy — so you can run your property confidently and avoid costly mistakes.
+        </p>
+
+        <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">For Tenants: Know Your Rights as a Renter</h2>
+        <p style="margin:0 0 16px;color:#334155">
+          Renters have far more rights than they often realize. Can my landlord enter without notice? Keep my full security
+          deposit? Raise the rent in the middle of my lease? Evict me without going to court? Our tenant Q&amp;A answers the most
+          common questions with a clear yes, no, or it-depends — each backed by the law. You'll also find free letters for giving
+          notice, requesting repairs, or asking for your deposit back, plus practical tips that help you rent smart and get your
+          full deposit returned when you move out.
+        </p>
+
+        <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">Landlord-Tenant Laws for All 50 States</h2>
+        <p style="margin:0 0 16px;color:#334155">
+          Every state sets its own rules for security deposit limits, the notice a landlord must give before entering a rental,
+          how much notice is required to end a tenancy, and caps on late fees. Our state law pages summarize these rules in plain
+          language and link straight to the official statute, so you can confirm the details yourself. Security deposits are one
+          of the most common sources of conflict, so we make the deposit cap and the deadline to return it easy to find for every
+          state.
         </p>
 
         <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">Free Legal Templates &amp; Documents</h2>
         <p style="margin:0 0 16px;color:#334155">
-          Download free, ready-to-use rental documents as editable Word files or print-ready PDFs. The library
-          includes a residential lease agreement, rental application, move-in and move-out inspection checklist,
-          security deposit forms, lead-based paint disclosure, pet addendum, rent increase notice, and more.
-          Tenants can grab letters too — a notice to vacate, a repair request, a security deposit return request,
-          a roommate agreement, and a lease-break request.
+          Download free, ready-to-use rental documents as editable Word files or print-ready PDFs. The landlord library includes
+          a residential lease agreement, rental application, move-in and move-out inspection checklist, security deposit forms,
+          lead-based paint disclosure, pet addendum, rent increase notice, notice of entry, co-signer agreement, and sublease
+          agreement. Tenants can download a notice to vacate, a repair request letter, a security deposit return request, a
+          roommate agreement, and a lease-break request. Every template includes fill-in fields and a plain-language explanation.
         </p>
 
-        <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">Local Rent Price Data</h2>
+        <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">Notice Letter Generator &amp; Rent Data</h2>
         <p style="margin:0 0 16px;color:#334155">
-          Search any state, city, or zip code to see typical median and average rent, a breakdown by bedroom count,
-          a multi-year rent trend with a forecast, and local population and resident-turnover figures sourced from
-          the U.S. Census Bureau. Landlords use it to price units to the market; tenants use it to check whether
-          their rent is fair.
+          The notice-letter generator builds late-rent notices, lease-violation notices, notices to vacate, and move-out letters
+          tailored to your state — ready to copy, print, or download. The rent data tool lets you search any state, city, or zip
+          code to see typical median and average rent, a breakdown by bedroom count, a multi-year rent trend with a forecast, and
+          local population and resident-turnover figures sourced from the U.S. Census Bureau. It's useful for landlords pricing a
+          unit and tenants checking whether their rent is fair.
         </p>
 
-        <h2 style="font-family:'Source Serif 4',Georgia,serif;font-size:24px;margin:32px 0 10px">Answers for Tenants</h2>
-        <p style="margin:0 0 20px;color:#334155">
-          Can my landlord enter without notice? Keep my deposit? Raise the rent mid-lease? Our tenant Q&amp;A gives a
-          clear yes, no, or it-depends answer to the most common questions, each backed by the relevant law, plus
-          practical tips for renting smart and protecting your deposit.
-        </p>
-
-        <nav aria-label="Site sections" style="margin:8px 0 24px">
+        <nav aria-label="Site sections" style="margin:24px 0">
           <p style="font-weight:700;margin:0 0 8px">Explore the site:</p>
-          <ul style="margin:0;padding-left:20px;color:#1D4ED8">
+          <ul style="margin:0;padding-left:20px;color:#1D4ED8;line-height:1.9">
             <li><a href="/landlord" style="color:#1D4ED8">For Landlords</a></li>
             <li><a href="/landlord/state-laws" style="color:#1D4ED8">State Landlord-Tenant Laws</a></li>
             <li><a href="/landlord/templates" style="color:#1D4ED8">Free Landlord Forms &amp; Templates</a></li>
             <li><a href="/landlord/notices" style="color:#1D4ED8">Notice Letter Generator</a></li>
             <li><a href="/landlord/rent-data" style="color:#1D4ED8">Rent Price Data</a></li>
+            <li><a href="/landlord/tips" style="color:#1D4ED8">Landlord Tips</a></li>
+            <li><a href="/landlord/faq" style="color:#1D4ED8">Landlord FAQ</a></li>
             <li><a href="/tenant" style="color:#1D4ED8">For Tenants</a></li>
             <li><a href="/tenant/qa" style="color:#1D4ED8">Tenant Q&amp;A: Can My Landlord Do That?</a></li>
             <li><a href="/tenant/templates" style="color:#1D4ED8">Free Tenant Letters &amp; Templates</a></li>
             <li><a href="/tenant/tips" style="color:#1D4ED8">Tenant Tips</a></li>
+            <li><a href="/about" style="color:#1D4ED8">About LandlordRules</a></li>
+            <li><a href="/contact" style="color:#1D4ED8">Contact Us</a></li>
+            <li><a href="/privacy" style="color:#1D4ED8">Privacy Policy</a></li>
+            <li><a href="/terms" style="color:#1D4ED8">Terms of Use</a></li>
           </ul>
         </nav>
 
         <p style="font-size:14px;color:#64748b;margin:0 0 8px">
           Authoritative resources:
           <a href="https://www.hud.gov/topics/rental_assistance/tenantrights" style="color:#1D4ED8">HUD Tenant Rights</a> ·
-          <a href="https://www.census.gov/" style="color:#1D4ED8">U.S. Census Bureau</a>
+          <a href="https://www.census.gov/" style="color:#1D4ED8">U.S. Census Bureau</a> ·
+          <a href="https://www.usa.gov/housing" style="color:#1D4ED8">USA.gov Housing</a>
         </p>
         <p style="font-size:13px;color:#94a3b8;margin:16px 0 0">
-          General legal information, not legal advice. Laws change and vary by state and locality — always verify
-          current statutes and consult a licensed attorney for your situation. Loading the interactive site…
+          General legal information, not legal advice. Laws change and vary by state and locality — always verify current
+          statutes and consult a licensed attorney for your situation. Loading the interactive site…
         </p>
       </main>
     </div>

@@ -4,7 +4,7 @@ import {
   ArrowRight, ShieldCheck, ExternalLink, RefreshCw, MapPin, Download, X,
   ClipboardList, ClipboardCheck, Banknote, Receipt, AlertTriangle, PawPrint, FileSignature,
   TrendingUp, KeyRound, Users, Building2, Wallet, Wrench, Lightbulb, Calendar,
-  ShieldAlert, CheckCircle2, BookOpen, BadgeCheck, LineChart
+  ShieldAlert, CheckCircle2, BookOpen, BadgeCheck, LineChart, Mail, Send, Heart
 } from "lucide-react";
 import { STATE_RENT, CITY_RENT, NATIONAL, modelByBedroom, zipToState } from "./rentData";
 
@@ -373,7 +373,7 @@ function Footer({ switchMode, mode, go }) {
   return (
     <footer className="mt-20 border-t border-white/10 bg-[#0B1F3A] text-slate-300">
       <div className={`${WRAP} py-12`}>
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="max-w-md">
             <div className="flex items-center gap-2 text-white">
               <span className="grid h-7 w-7 place-items-center rounded-lg bg-white/10"><Scale size={15} /></span>
@@ -392,13 +392,21 @@ function Footer({ switchMode, mode, go }) {
             {mode === "landlord" ? <FLink v="states">State Laws</FLink> : <FLink v="qa">Renter Q&A</FLink>}
             <FLink v="rent">Rent Data</FLink>
             <FLink v="forms">Free Templates</FLink>
+            {mode === "landlord" ? <FLink v="notice">Notice Generator</FLink> : <FLink v="tips">Tenant Tips</FLink>}
+            <FLink v="faq">FAQ</FLink>
           </div>
           <div className="flex flex-col gap-2.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">More</p>
-            {mode === "landlord" ? <FLink v="notice">Notice Generator</FLink> : <FLink v="rent">Am I overpaying?</FLink>}
-            <FLink v="tips">{mode === "landlord" ? "Landlord Tips" : "Tenant Tips"}</FLink>
-            <FLink v="faq">FAQ</FLink>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Company</p>
+            <FLink v="about">About</FLink>
+            <FLink v="contact">Contact</FLink>
+            <FLink v="privacy">Privacy Policy</FLink>
+            <FLink v="terms">Terms of Use</FLink>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Resources</p>
             <a href={HUD} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-white">HUD Tenant Rights <ExternalLink size={12} /></a>
+            <a href="https://www.census.gov/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-white">U.S. Census Bureau <ExternalLink size={12} /></a>
+            <a href="https://www.usa.gov/housing" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-slate-400 transition-colors hover:text-white">USA.gov Housing <ExternalLink size={12} /></a>
           </div>
         </div>
         <div className="mt-10 border-t border-white/10 pt-6">
@@ -1649,15 +1657,194 @@ function RentPrices({ mode }) {
   );
 }
 /* ---- URL routing: path-based, with browser back/forward + shareable links ---- */
+/* ============================================================
+   Info pages: About · Contact · Privacy · Terms
+   ============================================================ */
+function InfoShell({ eyebrow, title, intro, children }) {
+  return (
+    <div className={`${WRAP} py-12`}>
+      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A227]">{eyebrow}</p>
+      <h1 style={serif} className="mt-3 text-3xl font-bold text-[#0B1F3A] sm:text-4xl">{title}</h1>
+      {intro && <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-600">{intro}</p>}
+      <div className="mt-8 max-w-3xl">{children}</div>
+    </div>
+  );
+}
+
+function AboutPage({ go }) {
+  const links = [
+    { v: "states", label: "50-state landlord-tenant laws" },
+    { v: "forms", label: "Free forms & templates" },
+    { v: "rent", label: "Rent price data" },
+    { v: "notice", label: "Notice letter generator" },
+    { v: "faq", label: "Frequently asked questions" },
+  ];
+  return (
+    <InfoShell eyebrow="About" title="About LandlordRules"
+      intro="LandlordRules is a free resource that helps people know their rights and run their property with confidence — whether they own rentals or rent their home.">
+      <div className="space-y-4 text-sm leading-relaxed text-slate-700">
+        <p>Landlord-tenant law is confusing, scattered across 50 different states, and written in language most people can't easily parse. Yet the stakes are high: a misunderstanding about a security deposit, a notice period, or an eviction can cost either side hundreds or thousands of dollars. We built LandlordRules to put clear, reliable answers — and the actual law behind them — in one place that anyone can use without paying a lawyer just to get oriented.</p>
+        <p>For landlords, that means state-by-state rules, a notice-letter generator, free lease and rental document templates, and local rent data to help price units to the market. For tenants, it means straight answers to questions like "can my landlord do that?", free letters for giving notice or requesting repairs, and practical tips for protecting a security deposit. Everything links back to an official statute or government source so you can verify it yourself.</p>
+        <p>We believe good information makes for better landlords, better tenants, and fewer disputes. The site is free to use and supported by advertising. It is not a law firm and does not provide legal advice — but it's a great place to start before you act or call an attorney.</p>
+      </div>
+      <div className={`${card} mt-6 p-6`}>
+        <p style={serif} className="text-lg font-bold text-[#0B1F3A]">Explore what we offer</p>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {links.map((l) => (
+            <li key={l.v}>
+              <button onClick={() => go(l.v)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1D4ED8] hover:underline">
+                <ArrowRight size={14} /> {l.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Disclaimer className="mt-8" />
+    </InfoShell>
+  );
+}
+
+function ContactPage() {
+  const [sent, setSent] = useState(false);
+  const [err, setErr] = useState(false);
+  const inputCls = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-[#0B1F3A] outline-none focus:border-[#0B1F3A] focus:ring-2 focus:ring-[#0B1F3A]/15";
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setErr(false);
+    const form = e.target;
+    const body = new URLSearchParams(new FormData(form)).toString();
+    fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body })
+      .then((r) => { if (r.ok) setSent(true); else setErr(true); })
+      .catch(() => setErr(true));
+  };
+
+  return (
+    <InfoShell eyebrow="Contact" title="Contact Us"
+      intro="Questions, feedback, a correction to our state data, or a partnership idea? Send us a message and we'll get back to you.">
+      {sent ? (
+        <div className={`${card} flex items-start gap-3 p-6`}>
+          <CheckCircle2 size={22} className="mt-0.5 shrink-0 text-[#15803D]" />
+          <div>
+            <p style={serif} className="text-lg font-bold text-[#0B1F3A]">Thanks — your message was sent.</p>
+            <p className="mt-1 text-sm text-slate-600">We read every message and will reply to the email you provided.</p>
+          </div>
+        </div>
+      ) : (
+        <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" onSubmit={handleSubmit} className={`${card} space-y-4 p-6`}>
+          <input type="hidden" name="form-name" value="contact" />
+          <p className="hidden"><label>Leave blank: <input name="bot-field" /></label></p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Name</span>
+              <input name="name" required className={inputCls} />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Email</span>
+              <input type="email" name="email" required className={inputCls} />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Subject</span>
+            <input name="subject" className={inputCls} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Message</span>
+            <textarea name="message" required rows={5} className={inputCls} />
+          </label>
+          {err && <p className="text-sm text-red-600">Something went wrong sending the form. Please try again, or email us directly.</p>}
+          <button type="submit" className="inline-flex items-center gap-2 rounded-xl bg-[#0B1F3A] px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
+            <Send size={15} /> Send message
+          </button>
+        </form>
+      )}
+      <p className="mt-4 text-xs text-slate-500">Form submissions are handled by Netlify and appear in your site's Forms dashboard. You can also turn on email notifications there.</p>
+    </InfoShell>
+  );
+}
+
+function PrivacyPage() {
+  return (
+    <InfoShell eyebrow="Legal" title="Privacy Policy"
+      intro="This policy explains what information LandlordRules collects, how it's used, and the choices you have.">
+      <p className="text-xs text-slate-400">Last updated: June 2026</p>
+      <div className="mt-4 space-y-5 text-sm leading-relaxed text-slate-700">
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Information we collect</h2>
+          <p className="mt-1">We collect limited, mostly anonymous information. This includes basic analytics data (such as pages visited, approximate location, device and browser type, and how you arrived at the site) collected through Google Analytics, and any information you choose to provide directly — for example, your name, email, and message when you use our contact form.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Cookies and tracking</h2>
+          <p className="mt-1">We use cookies and similar technologies to understand how the site is used and to improve it. Analytics and, in the future, advertising partners may set cookies. You can control or delete cookies through your browser settings; doing so will not break the site.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Advertising</h2>
+          <p className="mt-1">LandlordRules is supported by advertising and may display ads served by third parties such as Google AdSense. These partners may use cookies to show more relevant ads based on your visits to this and other sites. You can learn about and opt out of personalized advertising through Google's Ads Settings and similar industry tools.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">How we use information</h2>
+          <p className="mt-1">We use the information to operate and improve the site, understand which content is helpful, respond to your messages, and serve advertising that keeps the site free. We do not sell your personal information.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Third-party services</h2>
+          <p className="mt-1">Some features rely on third-party services, including Google Analytics, Netlify (hosting and form handling), and U.S. Census Bureau data. These services have their own privacy practices, which we encourage you to review.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Children's privacy</h2>
+          <p className="mt-1">The site is intended for adults and is not directed at children under 13. We do not knowingly collect personal information from children.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Changes and contact</h2>
+          <p className="mt-1">We may update this policy from time to time; the "last updated" date above will change accordingly. Questions about privacy can be sent through our contact page.</p>
+        </div>
+      </div>
+    </InfoShell>
+  );
+}
+
+function TermsPage() {
+  return (
+    <InfoShell eyebrow="Legal" title="Terms of Use"
+      intro="By using LandlordRules, you agree to these terms. Please read them carefully.">
+      <p className="text-xs text-slate-400">Last updated: June 2026</p>
+      <div className="mt-4 space-y-5 text-sm leading-relaxed text-slate-700">
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Not legal advice</h2>
+          <p className="mt-1">LandlordRules provides general information about landlord-tenant matters for educational purposes only. It is not a law firm, does not provide legal advice, and using the site does not create an attorney-client relationship. Laws change and vary by state and locality. Always verify current statutes and consult a licensed attorney before acting on anything you read here.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">No warranty</h2>
+          <p className="mt-1">We work to keep the information and document templates accurate and current, but we make no guarantee that they are complete, correct, or suitable for your situation. The site and all content are provided "as is," without warranties of any kind.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Limitation of liability</h2>
+          <p className="mt-1">To the fullest extent permitted by law, LandlordRules and its operators are not liable for any losses or damages arising from your use of the site, its templates, or its data. You use the site and any documents you download at your own risk.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">Templates and content</h2>
+          <p className="mt-1">You may download and use our free templates for your own personal or business rental needs. You may not resell or redistribute the templates or site content as your own product. Always adapt templates to your jurisdiction and have important documents reviewed by an attorney.</p>
+        </div>
+        <div>
+          <h2 style={serif} className="text-lg font-bold text-[#0B1F3A]">External links and changes</h2>
+          <p className="mt-1">The site links to third-party websites, such as government statutes, that we do not control and are not responsible for. We may update these terms at any time, and continued use of the site means you accept the current version.</p>
+        </div>
+      </div>
+    </InfoShell>
+  );
+}
+
 const VIEW_SLUGS = { home: "", states: "state-laws", rent: "rent-data", notice: "notices", forms: "templates", tips: "tips", faq: "faq", qa: "qa" };
 const SLUG_TO_VIEW = Object.fromEntries(Object.entries(VIEW_SLUGS).map(([v, s]) => [s, v]));
+const GLOBAL_VIEWS = ["about", "contact", "privacy", "terms"]; // mode-agnostic top-level pages
 function pathFor(mode, view) {
+  if (GLOBAL_VIEWS.includes(view)) return `/${view}`;
   if (!mode) return "/";
   const slug = VIEW_SLUGS[view] || "";
   return slug ? `/${mode}/${slug}` : `/${mode}`;
 }
 function parsePath(pathname) {
   const parts = String(pathname || "/").split("/").filter(Boolean);
+  if (parts.length && GLOBAL_VIEWS.includes(parts[0])) return { mode: "landlord", view: parts[0] };
   const mode = parts[0] === "landlord" || parts[0] === "tenant" ? parts[0] : null;
   if (!mode) return { mode: null, view: "home" };
   const view = SLUG_TO_VIEW[parts[1] || ""] || "home";
@@ -1696,7 +1883,9 @@ export default function App() {
   if (!mode) return <EntryScreen choose={(m) => navigate(m, "home")} />;
 
   let page = null;
-  if (mode === "landlord") {
+  if (GLOBAL_VIEWS.includes(view)) {
+    page = view === "about" ? <AboutPage go={go} /> : view === "contact" ? <ContactPage /> : view === "privacy" ? <PrivacyPage /> : <TermsPage />;
+  } else if (mode === "landlord") {
     if (view === "home") page = <LandlordHome go={go} />;
     else if (view === "states") page = <StateLaws />;
     else if (view === "rent") page = <RentPrices mode={mode} />;
