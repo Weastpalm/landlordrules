@@ -1,0 +1,6 @@
+# LandlordRules.com — robots.txt
+User-agent: *
+Allow: /
+
+# Point Google to the sitemap
+Sitemap: https://landlordrules.com/sitemap.xml
